@@ -98,7 +98,42 @@ class BowlingSpec extends FlatSpec with Matchers {
   }
 
   "Bowling.validateGame" should "return Some[List[Frame]] if the game is valid" in {
-    val g2 = ( LastFrame(5, 5, Option(5)) :: List.fill(9)(Spare(5,5))).reverse
-    Bowling.validateGame(g2) shouldBe defined
+    val g = ( LastFrame(5, 5, Option(5)) :: List.fill(9)(Spare(5,5))).reverse
+    Bowling.validateGame(g) shouldBe defined
+  }
+
+  "Bowling.score" should "return 125 for partial game of Spares" in {
+    val g = (List.fill(9)(Spare(5,5))).reverse
+    Bowling.score(g) shouldBe 125
+  }
+
+  "Bowling.score" should "return 270 for partial game of Strikes" in {
+    val g = (List.fill(9)(Strike())).reverse
+    Bowling.score(g) shouldBe 210
+  }
+
+  "Bowling.score" should "return 10 for partial game of Regular" in {
+    val g = List(Regular(1,2), Regular(3, 4))
+    Bowling.score(g) shouldBe 10
+  }
+
+  "Bowling.score" should "return 10 for partial game of Regular + Strike" in {
+    val g = List(Regular(1,2), Regular(3, 4), Strike())
+    Bowling.score(g) shouldBe 10
+  }
+
+  "Bowling.score" should "return 30 for partial game of Regular + Strike + Regular" in {
+    val g = List(Regular(1,2), Regular(3, 4), Strike(), Regular(2, 3))
+    Bowling.score(g) shouldBe 30
+  }
+
+  "Bowling.score" should "return 10 for partial game of Regular + Spare" in {
+    val g = List(Regular(1,2), Regular(3, 4), Spare(5, 5))
+    Bowling.score(g) shouldBe 10
+  }
+
+  "Bowling.score" should "return 14 for partial game of Regular + Spare + Regular" in {
+    val g = List(Regular(1,2), Regular(3, 4), Spare(5, 5), Regular(2,3))
+    Bowling.score(g) shouldBe 27
   }
 }
