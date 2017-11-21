@@ -67,4 +67,20 @@ class BowlingSpec extends FlatSpec with Matchers {
     Bowling.checkFrame(LastFrame(5,5, Option(5))) shouldBe true
     Bowling.checkFrame(LastFrame(10,10, Option(10))) shouldBe true
   }
+
+  "Bowling.checkFrame" should "return false if Frame is not correct" in {
+    Bowling.checkFrame(Strike(1)) shouldBe false
+    Bowling.checkFrame(Spare(1,5)) shouldBe false
+
+    Bowling.checkFrame(Regular(10,5)) shouldBe false
+    Bowling.checkFrame(Regular(-1,5)) shouldBe false
+    Bowling.checkFrame(Regular(-1, -5)) shouldBe false
+    Bowling.checkFrame(Regular(1, -5)) shouldBe false
+
+    Bowling.checkFrame(LastFrame(3,3, Option(1))) shouldBe false
+    Bowling.checkFrame(LastFrame(11, 12, Option(1))) shouldBe false
+
+    Bowling.checkFrame(LastFrame(5,5, None)) shouldBe false
+    Bowling.checkFrame(LastFrame(10,10, None)) shouldBe false
+  }
 }
