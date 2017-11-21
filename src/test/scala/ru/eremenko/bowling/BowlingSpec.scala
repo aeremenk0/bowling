@@ -59,7 +59,7 @@ class BowlingSpec extends FlatSpec with Matchers {
     Bowling.isLastFrame(Regular(1,2)) shouldBe false
   }
 
-  "Bowling.checkFrame" should "return true if Frame is correct" in {
+  "Bowling.checkFrame" should "return true if the frame is correct" in {
     Bowling.checkFrame(Strike()) shouldBe true
     Bowling.checkFrame(Spare(5,5)) shouldBe true
     Bowling.checkFrame(Regular(3,5)) shouldBe true
@@ -68,7 +68,7 @@ class BowlingSpec extends FlatSpec with Matchers {
     Bowling.checkFrame(LastFrame(10,10, Option(10))) shouldBe true
   }
 
-  "Bowling.checkFrame" should "return false if Frame is not correct" in {
+  "Bowling.checkFrame" should "return false if the frame is not correct" in {
     Bowling.checkFrame(Strike(1)) shouldBe false
     Bowling.checkFrame(Spare(1,5)) shouldBe false
 
@@ -82,5 +82,23 @@ class BowlingSpec extends FlatSpec with Matchers {
 
     Bowling.checkFrame(LastFrame(5,5, None)) shouldBe false
     Bowling.checkFrame(LastFrame(10,10, None)) shouldBe false
+  }
+
+  "Bowling.validateGame" should "return None if the game is not valid" in {
+    Bowling.validateGame(List(Strike())) shouldBe None
+
+    val game = List.fill(10)(Spare(5,5))
+    Bowling.validateGame(game) shouldBe None
+
+    val g2 = ( LastFrame(5, 5, Option(5)) :: List.fill(10)(Spare(5,5))).reverse
+    Bowling.validateGame(g2) shouldBe None
+
+    val g3 = ( LastFrame(5, 5, Option(5)) :: Strike(1) :: List.fill(8)(Spare(5,5))).reverse
+    Bowling.validateGame(g3) shouldBe None
+  }
+
+  "Bowling.validateGame" should "return Some[List[Frame]] if the game is valid" in {
+    val g2 = ( LastFrame(5, 5, Option(5)) :: List.fill(9)(Spare(5,5))).reverse
+    Bowling.validateGame(g2) shouldBe defined
   }
 }

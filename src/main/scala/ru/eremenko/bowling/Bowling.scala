@@ -36,13 +36,16 @@ object Bowling {
     }
   }
 
-  def validate(game: List[Frame]) : Option[List[Frame]] = {
-    if (game.length != 10) None
-    else if(!isLastFrame(game.last)) None
-    else if(!game.forall(checkFrame)) None
+  def validateGame(game: List[Frame]) : Option[List[Frame]] = {
+    validatePartialGame(game).flatMap{ g =>
+      if (g.length == 10 && isLastFrame(g.last)) Option(g)
+      else None
+    }
+  }
 
-
-    Option(game)
+  def validatePartialGame(game: List[Frame]) : Option[List[Frame]] = {
+    if (game.length <= 10 && game.forall(checkFrame)) Option(game)
+    else None
   }
 
   def score(game: List[Frame]): Int = {
