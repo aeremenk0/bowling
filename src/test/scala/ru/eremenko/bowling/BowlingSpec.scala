@@ -85,8 +85,8 @@ class BowlingSpec extends FlatSpec with Matchers {
     Bowling.isValidFrame(LastFrame(10,10, None)) shouldBe false
   }
 
-  "Bowling.validateGame" should "return None if the game is not valid" in {
-    Bowling.isValidGame(List(Strike())) shouldBe false
+  "Bowling.isValidGame" should "return true if partial game is valid" in {
+    Bowling.isValidGame(List(Strike())) shouldBe true
 
     val game = List.fill(10)(Spare(5,5))
     Bowling.isValidGame(game) shouldBe false
@@ -98,7 +98,7 @@ class BowlingSpec extends FlatSpec with Matchers {
     Bowling.isValidGame(g3) shouldBe false
   }
 
-  "Bowling.validateGame" should "return Some[List[Frame]] if the game is valid" in {
+  "Bowling.isValidGame" should "return Some[List[Frame]] if the game is valid" in {
     val g = ( LastFrame(5, 5, Option(5)) :: List.fill(9)(Spare(5,5))).reverse
     Bowling.isValidGame(g) shouldBe true
   }
@@ -250,7 +250,7 @@ class BowlingSpec extends FlatSpec with Matchers {
   }
 
   "Bowling.score" should "return Left for invalid input ..." in {
-    val r = Bowling.parse("5/ 5/ 5/ 5/ 5/ 5/ 5/ 5/ 5/ 53 55")
+    val r = Bowling.parse("5// 5/ 5/ 5/ 5/ 5/ 5/ 5/ 5// 53")
 
     val res = r.flatMap{g =>
       if(Bowling.isValidGame(g))

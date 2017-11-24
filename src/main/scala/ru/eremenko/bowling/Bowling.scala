@@ -55,7 +55,9 @@ object Bowling {
   }
 
   def isValidGame(g: List[Frame]) : Boolean = {
-    isValidPartialGame(g) && g.length == FramesNumber && isLastFrame(g.last)
+    val r = if(g.length == FramesNumber) isLastFrame(g.last) else true
+
+    isValidPartialGame(g) && r
   }
 
   def isValidPartialGame(game: List[Frame]) : Boolean = {
@@ -85,9 +87,6 @@ object Bowling {
     def go(ls: List[Char], acc: List[Frame], nodes: Int = 0): Either[Error, List[Frame]] = {
       ls match {
         case Nil => Right(acc)
-        case 'X' :: 'X' :: 'X' :: Nil if nodes == FramesNumber - 1 =>
-          Right(LastFrame(PinNumber, PinNumber, Option(PinNumber)) :: acc)
-
         case 'X' :: 'X' :: n :: Nil if nodes == FramesNumber - 1 =>
           charToInt(n).map(d => LastFrame(PinNumber, PinNumber, Option(d)) :: acc)
 
@@ -128,7 +127,7 @@ object Bowling {
     val r = Bowling.parse(input)
 
     val res = r.flatMap{g =>
-      if(Bowling.isValidPartialGame(g))
+      if(Bowling.isValidGame(g))
         Bowling.score(g)
       else
         Left(new Error("Game is not valid."))
