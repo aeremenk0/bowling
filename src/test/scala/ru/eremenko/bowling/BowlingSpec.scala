@@ -2,6 +2,7 @@ package ru.eremenko.bowling
 
 import org.scalatest.{FlatSpec, Matchers}
 
+
 class BowlingSpec extends FlatSpec with Matchers {
   "Bowling.score" should "return score 0 for an empty input" in {
     val r = Bowling.score(List.empty)
@@ -60,46 +61,46 @@ class BowlingSpec extends FlatSpec with Matchers {
   }
 
   "Bowling.checkFrame" should "return true if the frame is correct" in {
-    Bowling.checkFrame(Strike()) shouldBe true
-    Bowling.checkFrame(Spare(5,5)) shouldBe true
-    Bowling.checkFrame(Regular(3,5)) shouldBe true
-    Bowling.checkFrame(LastFrame(3,3, None)) shouldBe true
-    Bowling.checkFrame(LastFrame(5,5, Option(5))) shouldBe true
-    Bowling.checkFrame(LastFrame(10,10, Option(10))) shouldBe true
+    Bowling.isValidFrame(Strike()) shouldBe true
+    Bowling.isValidFrame(Spare(5,5)) shouldBe true
+    Bowling.isValidFrame(Regular(3,5)) shouldBe true
+    Bowling.isValidFrame(LastFrame(3,3, None)) shouldBe true
+    Bowling.isValidFrame(LastFrame(5,5, Option(5))) shouldBe true
+    Bowling.isValidFrame(LastFrame(10,10, Option(10))) shouldBe true
   }
 
   "Bowling.checkFrame" should "return false if the frame is not correct" in {
-    Bowling.checkFrame(Strike(1)) shouldBe false
-    Bowling.checkFrame(Spare(1,5)) shouldBe false
+    Bowling.isValidFrame(Strike(1)) shouldBe false
+    Bowling.isValidFrame(Spare(1,5)) shouldBe false
 
-    Bowling.checkFrame(Regular(10,5)) shouldBe false
-    Bowling.checkFrame(Regular(-1,5)) shouldBe false
-    Bowling.checkFrame(Regular(-1, -5)) shouldBe false
-    Bowling.checkFrame(Regular(1, -5)) shouldBe false
+    Bowling.isValidFrame(Regular(10,5)) shouldBe false
+    Bowling.isValidFrame(Regular(-1,5)) shouldBe false
+    Bowling.isValidFrame(Regular(-1, -5)) shouldBe false
+    Bowling.isValidFrame(Regular(1, -5)) shouldBe false
 
-    Bowling.checkFrame(LastFrame(3,3, Option(1))) shouldBe false
-    Bowling.checkFrame(LastFrame(11, 12, Option(1))) shouldBe false
+    Bowling.isValidFrame(LastFrame(3,3, Option(1))) shouldBe false
+    Bowling.isValidFrame(LastFrame(11, 12, Option(1))) shouldBe false
 
-    Bowling.checkFrame(LastFrame(5,5, None)) shouldBe false
-    Bowling.checkFrame(LastFrame(10,10, None)) shouldBe false
+    Bowling.isValidFrame(LastFrame(5,5, None)) shouldBe false
+    Bowling.isValidFrame(LastFrame(10,10, None)) shouldBe false
   }
 
   "Bowling.validateGame" should "return None if the game is not valid" in {
-    Bowling.validateGame(List(Strike())) shouldBe None
+    Bowling.isValidGame(List(Strike())) shouldBe false
 
     val game = List.fill(10)(Spare(5,5))
-    Bowling.validateGame(game) shouldBe None
+    Bowling.isValidGame(game) shouldBe false
 
     val g2 = ( LastFrame(5, 5, Option(5)) :: List.fill(10)(Spare(5,5))).reverse
-    Bowling.validateGame(g2) shouldBe None
+    Bowling.isValidGame(g2) shouldBe false
 
     val g3 = ( LastFrame(5, 5, Option(5)) :: Strike(1) :: List.fill(8)(Spare(5,5))).reverse
-    Bowling.validateGame(g3) shouldBe None
+    Bowling.isValidGame(g3) shouldBe false
   }
 
   "Bowling.validateGame" should "return Some[List[Frame]] if the game is valid" in {
     val g = ( LastFrame(5, 5, Option(5)) :: List.fill(9)(Spare(5,5))).reverse
-    Bowling.validateGame(g) shouldBe defined
+    Bowling.isValidGame(g) shouldBe true
   }
 
   "Bowling.score" should "return 125 for partial game of Spares" in {
@@ -135,5 +136,129 @@ class BowlingSpec extends FlatSpec with Matchers {
   "Bowling.score" should "return 14 for partial game of Regular + Spare + Regular" in {
     val g = List(Regular(1,2), Regular(3, 4), Spare(5, 5), Regular(2,3))
     Bowling.score(g) shouldBe Right(27)
+  }
+
+  "Bowling.prepareString" should "return List[Char] with removed spaces" in {
+    val r = Bowling.prepareString("X X X X X X X X X X X X")
+    r.size shouldBe 12
+    r.forall(_ == 'X')
+  }
+
+  "Bowling.prepareString" should "return List[Char] with removed spaces and - converted into 0" in {
+    val r = Bowling.prepareString("9- 9- 9- 9- 9- 9- 9- 9- 9- 9-")
+    r.size shouldBe 20
+  }
+
+  "Bowling.parse" should "return Right[Nil] on empty input" in {
+    Bowling.parse("") shouldBe Right(Nil)
+  }
+
+  "Bowling.parse" should "return Right[List[Char]] on valid input" in {
+    val r = Bowling.parse("X X X X X X X X X X X X")
+
+    r shouldBe 'right
+  }
+
+  "Bowling.score" should "return Right(300) for all Strikes" in {
+    val r = Bowling.parse("X X X X X X X X X X X X")
+
+    val res = r.flatMap{g =>
+      if(Bowling.isValidGame(g))
+        Bowling.score(g)
+      else
+        Left(new Error("Game is not valid."))
+    }
+
+    res shouldBe Right(300)
+  }
+
+  "Bowling.parse" should "return Right[List[Char]] on valid input 2" in {
+    val r = Bowling.parse("9- 9- 9- 9- 9- 9- 9- 9- 9- 9-")
+
+    r shouldBe 'right
+  }
+
+  "Bowling.score" should "return Right(90) for all 9-" in {
+    val r = Bowling.parse("9- 9- 9- 9- 9- 9- 9- 9- 9- 9-")
+
+    val res = r.flatMap{g =>
+      if(Bowling.isValidGame(g))
+        Bowling.score(g)
+      else
+        Left(new Error("Game is not valid."))
+    }
+
+    res shouldBe Right(90)
+  }
+
+  "Bowling.parse" should "return Try[List[Char]] on valid input 3" in {
+    val r = Bowling.parse("5/ 5/ 5/ 5/ 5/ 5/ 5/ 5/ 5/ 5/5")
+
+    r shouldBe 'right
+  }
+
+  "Bowling.score" should "return Right(125) for all 5/" in {
+    val r = Bowling.parse("5/ 5/ 5/ 5/ 5/ 5/ 5/ 5/ 5/ 5/5")
+
+    val res = r.flatMap{g =>
+      if(Bowling.isValidGame(g))
+        Bowling.score(g)
+      else
+        Left(new Error("Game is not valid."))
+    }
+
+    res shouldBe Right(150)
+  }
+
+  "Bowling.score" should "return Right(15) for all 5/" in {
+    val r = Bowling.parse("5/ 5/")
+
+    val res = r.flatMap{g =>
+      if(Bowling.isValidPartialGame(g))
+        Bowling.score(g)
+      else
+        Left(new Error("Game is not valid."))
+    }
+
+    res shouldBe Right(20)
+  }
+
+  "Bowling.score" should "return Right(0) for empty input" in {
+    val r = Bowling.parse("")
+
+    val res = r.flatMap{g =>
+      if(Bowling.isValidPartialGame(g))
+        Bowling.score(g)
+      else
+        Left(new Error("Game is not valid."))
+    }
+
+    res shouldBe Right(0)
+  }
+
+  "Bowling.score" should "return Left for invalid input" in {
+    val r = Bowling.parse("5/ 5/ 5/ 5/ 5/ 5/ 5/ 5/ 5/ 535")
+
+    val res = r.flatMap{g =>
+      if(Bowling.isValidGame(g))
+        Bowling.score(g)
+      else
+        Left(new Error("Game is not valid."))
+    }
+
+    res shouldBe 'left
+  }
+
+  "Bowling.score" should "return Left for invalid input ..." in {
+    val r = Bowling.parse("5/ 5/ 5/ 5/ 5/ 5/ 5/ 5/ 5/ 53 55")
+
+    val res = r.flatMap{g =>
+      if(Bowling.isValidGame(g))
+        Bowling.score(g)
+      else
+        Left(new Error("Game is not valid."))
+    }
+
+    res shouldBe 'left
   }
 }

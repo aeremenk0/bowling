@@ -1,14 +1,18 @@
 package ru.eremenko.bowling
 
+
 sealed trait Frame
 case class Regular(first: Int, second: Int) extends Frame
 case class Spare(first: Int, second: Int) extends Frame
-case class Strike(first: Int = 10) extends Frame
+case class Strike(first: Int = Bowling.PinNumber) extends Frame
 case class LastFrame(first: Int, second: Int, third: Option[Int]) extends Frame
 
 case class Accumulator(score: Int, last: Option[Int], secondLast: Option[Int])
 
 object Bowling {
+  val PinNumber: Int = 10
+  val FramesNumber: Int = 10
+
   def calc(frame: Frame, acc: Accumulator): Either[String, Accumulator] =
     frame match {
       case Strike(f) =>
@@ -38,28 +42,24 @@ object Bowling {
     }
   }
 
-  def checkFrame(fr: Frame): Boolean = {
+  def isValidFrame(fr: Frame): Boolean = {
     fr match {
-      case Strike(f) => f == 10
-      case Spare(f, s) => f + s == 10 && s > 0 & f > 0
-      case Regular(f, s) => f + s < 10 && f > 0 && s > 0
+      case Strike(f) => f == PinNumber
+      case Spare(f, s) => f + s == PinNumber && s > 0 & f > 0
+      case Regular(f, s) => f + s < PinNumber && f >= 0 && s >= 0
       case LastFrame(f, s, t) =>
-        if(f + s < 10) t.isEmpty
-        else if (f + s > 20) false
+        if(f + s < PinNumber) t.isEmpty
+        else if (f + s > PinNumber * 2) false
         else t.isDefined
     }
   }
 
-  def validateGame(game: List[Frame]) : Option[List[Frame]] = {
-    validatePartialGame(game).flatMap{ g =>
-      if (g.length == 10 && isLastFrame(g.last)) Option(g)
-      else None
-    }
+  def isValidGame(g: List[Frame]) : Boolean = {
+    isValidPartialGame(g) && g.length == FramesNumber && isLastFrame(g.last)
   }
 
-  def validatePartialGame(game: List[Frame]) : Option[List[Frame]] = {
-    if (game.length <= 10 && game.forall(checkFrame)) Option(game)
-    else None
+  def isValidPartialGame(game: List[Frame]) : Boolean = {
+    game.length <= FramesNumber && game.forall(isValidFrame)
   }
 
   def score(game: List[Frame]): Either[String, Int] = {
@@ -68,5 +68,75 @@ object Bowling {
     }
 
     acc.map(_.score)
+  }
+
+  def prepareString(s: String) : List[Char] = {
+    s.to[List].filterNot(_ == ' ').map( c => if(c == '-') '0' else c)
+  }
+
+  def charToInt(c: Char) : Either[Error, Int] = {
+    if(c == 'X') Right(PinNumber)
+    else if(c == '-') Right(0)
+    else if(c.isDigit) Right(c.asDigit)
+    else Left(new Error("$c can not to be parsed to digit"))
+  }
+
+  def parse(s: String) : Either[Error, List[Frame]] = {
+    def go(ls: List[Char], acc: List[Frame], nodes: Int = 0): Either[Error, List[Frame]] = {
+      ls match {
+        case Nil => Right(acc)
+        case 'X' :: 'X' :: 'X' :: Nil if nodes == FramesNumber - 1 =>
+          Right(LastFrame(PinNumber, PinNumber, Option(PinNumber)) :: acc)
+
+        case 'X' :: 'X' :: n :: Nil if nodes == FramesNumber - 1 =>
+          charToInt(n).map(d => LastFrame(PinNumber, PinNumber, Option(d)) :: acc)
+
+        case s :: '/' :: n :: Nil if nodes == FramesNumber - 1 =>
+          for{
+            d1 <- charToInt(s)
+            d2 <- charToInt(n)
+          } yield (LastFrame(d1, PinNumber - d1, Option(d2)) :: acc)
+
+        case s :: n :: Nil if nodes == FramesNumber - 1 =>
+          for{
+            d1 <- charToInt(s)
+            d2 <- charToInt(n)
+          } yield (LastFrame(d1, d2, None) :: acc)
+
+        case 'X' :: tail => go(tail, Strike() :: acc, nodes + 1)
+        case n :: '/' :: tail =>
+          charToInt(n).flatMap(d => go(tail, Spare(d, PinNumber - d) :: acc, nodes + 1))
+
+        case s :: n :: tail =>
+          val r = for {
+            d1 <- charToInt(s)
+            d2 <- charToInt(n)
+          } yield (d1, d2)
+
+          r.flatMap(d => go(tail, Regular.tupled(d) :: acc, nodes + 1))
+
+        case _ =>
+          Left(new Error("Invalid input"))
+      }
+    }
+    go(prepareString(s), Nil).map(_.reverse)
+  }
+
+  def main(args: Array[String]): Unit = {
+    val input = args.mkString(" ")
+
+    val r = Bowling.parse(input)
+
+    val res = r.flatMap{g =>
+      if(Bowling.isValidPartialGame(g))
+        Bowling.score(g)
+      else
+        Left(new Error("Game is not valid."))
+    }
+
+    res match {
+      case Right(s) => println(s)
+      case Left(e) => println(e)
+    }
   }
 }
